@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import { getDatabase, ref, set } from 'firebase/database'
@@ -11,15 +11,37 @@ import Lobby from './pages/lobby'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './services/firebase'
 import { useFirebase } from "./services/firebase";
+import Room from './pages/room/room'
 
+
+
+
+// Call the async function
 
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [user_id, setUid] = useState(null);
   const f = useFirebase();
-  let user_id=f.getUserId();
-  
 
+  useEffect(() => {
+    const getGuestId = async () => {
+      try {
+        const user = await f.ensureAnonymousUser();
+        console.log("Anonymous user ensured:", user.uid);
+        setUid(user.uid); 
+        localStorage.setItem('id', user.uid);
+        
+        // Update state with the actual ID
+      } catch (error) {
+        console.error("Error ensuring anonymous user:", error);
+      }
+    };
+
+    if(!localStorage.getItem('id'))
+      getGuestId();
+  }, [f]);
+
+  
 
   return (
     <>
@@ -30,18 +52,18 @@ function App() {
 
         <Route path='/' element={<div className="min-h-screen w-full flex items-center justify-center bg-cover bg-cover bg-[#05071a] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] bg-center bg-no-repeat"
         >
-          <LoginPage></LoginPage>
+          <LoginPage user_id={user_id}></LoginPage>
         </div>} />
         <Route path="/:roomId/lobby" element={<div className="min-h-screen w-full flex items-center justify-center bg-cover bg-[#05071a] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] bg-center bg-no-repeat"
         >
           <Lobby user_id={user_id} ></Lobby>
         </div>} />
-        <Route path='/:roomId/room' element={<div className="min-h-screen bg-blue w-full flex items-center justify-center bg-cover bg-center bg-no-repeat">
+        <Route path='/:roomId/room' element={<div className="min-h-screen bg-[#05071a] w-full flex items-center justify-center bg-cover bg-center bg-no-repeat">
 
-          Room
+          <Room user_id={user_id}></Room>
         </div>} />
 
-        <Route path='/:roomId/waiting-room' element={<div className="min-h-screen bg-[#05071a] w-full flex items-center justify-center bg-cover bg-center bg-no-repeat text-white items-center">
+        {/* <Route path='/:roomId/waiting-room' element={<div className="min-h-screen bg-[#05071a] w-full flex items-center justify-center bg-cover bg-center bg-no-repeat text-white items-center">
 
 
           <h1>
@@ -49,7 +71,7 @@ function App() {
 
           </h1>
 
-        </div>} />
+        </div>} /> */}
 
 
 

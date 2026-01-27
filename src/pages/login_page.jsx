@@ -4,7 +4,13 @@ import { useFirebase } from "../services/firebase";
 import { useNavigate } from 'react-router-dom';
 import { customAlphabet } from 'nanoid';
 
-function LoginPage() {
+
+
+function LoginPage(props) {
+
+    const user_id = localStorage.getItem('id') || props.user_id;
+    // const user_id= auth?.currentUser?.uid;
+
     const navigate = useNavigate();
     const [step, updateStep] = useState(0);
     const [username, updateUserName] = useState(null);
@@ -20,9 +26,7 @@ function LoginPage() {
 
     const f = useFirebase();
 
-    const addUserToRoom = async () => {
-
-        const user_id = await f.getUserId();
+    const addUserToRoom = async (id) => {
 
         const user_config = {
             [user_id]: {
@@ -30,12 +34,13 @@ function LoginPage() {
                 is_host: is_host,
                 is_ready: false,
                 score: 0,
-                is_driver: false,
-                avatar: `https://source.boringavatars.com/beam/80/${username}?colors=ffadad,ffd6a5,fdffb6,caffbf,9bf6ff`
+                createdAt: Date.now(),
+                is_driver: is_host,
             }
         }
 
-        f.writeUserData(user_config, "users/" + roomId);
+        await f.writeUserData(user_config[user_id], `${id}/${user_id}`);
+        await f.updateRoomData({ [user_id]: username }, id, 'gameState/participants_list/')
 
 
 
@@ -44,36 +49,50 @@ function LoginPage() {
 
     const handleGoogleSignIn = async () => {
 
-        await f.handleGoogleSignIn();
-        //route to the lobby
-        updateIsHost(true);
-        updateStep(1);
+        try {
+            const resp = await f.handleGoogleSignIn();
+                console.log("Sign-in successful:");
+                updateIsHost(true);
+                updateStep(1);
+            
+        } catch (error) {
+            console.error("Authentication Error:", error.message);
+        }
+
+
 
 
 
 
     };
 
-    const sendHost = () => {
+    const sendHost = async () => {
 
         const nanoid = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 6);
 
 
         const id = nanoid();
         updateRoomId(id);
-        addUserToRoom();
+        addUserToRoom(id);
 
 
-        const gameState = {
+
+        const roomData = {
+            host_id: user_id, // Now at the top level
             gameState: {
                 gameStatus: "waiting",
                 createdAt: Date.now(),
                 roundStatus: null,
-                gameUrl: `/${id}/waiting-room`,
+                participants_list: { [user_id]: true },
+                gameUrl: `/${id}/lobby`,
                 lastRound: null
             }
-        }
-        f.writeUserData(gameState, "rooms/" + id);
+            // participants will be added dynamically in Phase 2
+        };
+
+        await f.writeRoomData(roomData, id);
+
+
 
         navigate(`/${id}/lobby`);
 
@@ -91,8 +110,9 @@ function LoginPage() {
         //return game state url
         const room = await f.getRoomData(roomId);
         if (room) {
+            addUserToRoom(roomId);
+
             navigate(room.gameState.gameUrl);
-            addUserToRoom();
 
         }
 
@@ -178,7 +198,6 @@ function LoginPage() {
                     <button
                         onClick={() => {
 
-                            addUserToRoom();
 
                             if (is_host)
                                 sendHost();

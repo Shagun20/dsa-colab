@@ -10,11 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@google/generative-ai": "^0.24.1",
+    "@monaco-editor/react": "^4.7.0",
+    "@openrouter/sdk": "^0.4.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/vite": "^4.1.18",
     "boostrap": "^2.0.0",
     "boring-avatars": "^2.0.4",
     "firebase": "^12.7.0",
+    "leetcode-query": "^2.0.1",
+    "lodash": "^4.17.21",
+    "lodash.debounce": "^4.0.8",
     "nanoid": "^5.1.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
